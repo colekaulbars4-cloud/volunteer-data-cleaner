@@ -1,0 +1,313 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "4Ii_Sr21BHsZ",
+        "outputId": "0baf9a62-6c64-43ee-bf77-c6ee9b35c6fc"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Created messy_volunteers.csv\n"
+          ]
+        }
+      ],
+      "source": [
+        "# Make a deliberately messy volunteer sign-up list to practice on\n",
+        "import pandas as pd\n",
+        "\n",
+        "data = {\n",
+        "    \"name\":  [\"Maria Lopez\",\"maria lopez\",\"James Chen\",\"J. Chen \",\"Aisha Khan\",\"Tom Reed\",\"tom reed\",\"\", \"Priya Patel\",\"David Kim\"],\n",
+        "    \"email\": [\"maria@x.com\",\"maria@x.com\",\"james@x.com\",\"james@x.com\",\"aisha@x.com\",\"tom@x.com\",\"tom@x.com\",\"ghost@x.com\",\"priya@x.com\",\"\"],\n",
+        "    \"signup_date\": [\"2026-06-01\",\"2026-06-01\",\"06/02/2026\",\"06/02/2026\",\"2026-06-03\",\"June 4 2026\",\"June 4 2026\",\"2026-06-05\",\"2026-06-06\",\"2026-06-07\"],\n",
+        "    \"hours\": [4, 4, 6, 6, \"\", 3, 3, 2, 8, 5],\n",
+        "}\n",
+        "df = pd.DataFrame(data)\n",
+        "df.to_csv(\"messy_volunteers.csv\", index=False)\n",
+        "print(\"Created messy_volunteers.csv\")\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df = pd.read_csv(\"messy_volunteers.csv\")\n",
+        "print(df)        # see the whole thing\n",
+        "print()\n",
+        "df.info()        # see column types and where values are missing"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "MAS-91G8Bk4M",
+        "outputId": "9639fb96-4105-4c63-e0f2-42c90b7a94f5"
+      },
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "          name        email  signup_date  hours\n",
+            "0  Maria Lopez  maria@x.com   2026-06-01    4.0\n",
+            "1  maria lopez  maria@x.com   2026-06-01    4.0\n",
+            "2   James Chen  james@x.com   06/02/2026    6.0\n",
+            "3     J. Chen   james@x.com   06/02/2026    6.0\n",
+            "4   Aisha Khan  aisha@x.com   2026-06-03    NaN\n",
+            "5     Tom Reed    tom@x.com  June 4 2026    3.0\n",
+            "6     tom reed    tom@x.com  June 4 2026    3.0\n",
+            "7          NaN  ghost@x.com   2026-06-05    2.0\n",
+            "8  Priya Patel  priya@x.com   2026-06-06    8.0\n",
+            "9    David Kim          NaN   2026-06-07    5.0\n",
+            "\n",
+            "<class 'pandas.core.frame.DataFrame'>\n",
+            "RangeIndex: 10 entries, 0 to 9\n",
+            "Data columns (total 4 columns):\n",
+            " #   Column       Non-Null Count  Dtype  \n",
+            "---  ------       --------------  -----  \n",
+            " 0   name         9 non-null      object \n",
+            " 1   email        9 non-null      object \n",
+            " 2   signup_date  10 non-null     object \n",
+            " 3   hours        9 non-null      float64\n",
+            "dtypes: float64(1), object(3)\n",
+            "memory usage: 452.0+ bytes\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "\n",
+        "\n",
+        "*   List item\n",
+        "*   List item\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "A3WKON1jGGCC"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# --- CLEAN THE DATA ---\n",
+        "\n",
+        "# 1. Tidy the names: remove extra spaces, fix the capitalization\n",
+        "df[\"name\"] = df[\"name\"].str.strip().str.title()\n",
+        "\n",
+        "# 2. Tidy the emails: remove spaces, make them all lowercase\n",
+        "df[\"email\"] = df[\"email\"].str.strip().str.lower()\n",
+        "\n",
+        "# 3. Fix the dates: turn all three formats into one clean date\n",
+        "df[\"signup_date\"] = pd.to_datetime(df[\"signup_date\"], format=\"mixed\")\n",
+        "\n",
+        "# 4. Remove duplicate people. Same EMAIL = same person, even if the\n",
+        "#    name is typed differently. Keep the first time they appear.\n",
+        "df = df.drop_duplicates(subset=\"email\", keep=\"first\")\n",
+        "\n",
+        "# 5. Drop rows that have no name at all (the junk \"ghost\" row)\n",
+        "df = df.dropna(subset=[\"name\"])\n",
+        "\n",
+        "# 6. Fill in missing hours with 0 so we can add them up later\n",
+        "df[\"hours\"] = df[\"hours\"].fillna(0)\n",
+        "\n",
+        "# Reset the row numbers and show the result\n",
+        "df = df.reset_index(drop=True)\n",
+        "print(df)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "ISNqgcp9F3Tb",
+        "outputId": "c605710c-7d30-4793-8702-4df5549c8e8c"
+      },
+      "execution_count": 3,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "          name        email signup_date  hours\n",
+            "0  Maria Lopez  maria@x.com  2026-06-01    4.0\n",
+            "1   James Chen  james@x.com  2026-06-02    6.0\n",
+            "2   Aisha Khan  aisha@x.com  2026-06-03    0.0\n",
+            "3     Tom Reed    tom@x.com  2026-06-04    3.0\n",
+            "4  Priya Patel  priya@x.com  2026-06-06    8.0\n",
+            "5    David Kim          NaN  2026-06-07    5.0\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# --- SUMMARIZE: answer a real question from the data ---\n",
+        "\n",
+        "# Q1: How many total volunteer hours did we get, and from how many people?\n",
+        "total_hours = df[\"hours\"].sum()\n",
+        "total_people = len(df)\n",
+        "print(f\"{total_people} volunteers contributed {total_hours:.0f} total hours.\")\n",
+        "print(f\"Average: {total_hours / total_people:.1f} hours per volunteer.\")\n",
+        "print()\n",
+        "\n",
+        "# Q2: How many sign-ups per day? (groupby = bucket rows, then count)\n",
+        "per_day = df.groupby(\"signup_date\").size()\n",
+        "print(\"Sign-ups per day:\")\n",
+        "print(per_day)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "XUrElExtGIeF",
+        "outputId": "1a9ba7b7-c685-4319-b92e-cea2f626680b"
+      },
+      "execution_count": 4,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "6 volunteers contributed 26 total hours.\n",
+            "Average: 4.3 hours per volunteer.\n",
+            "\n",
+            "Sign-ups per day:\n",
+            "signup_date\n",
+            "2026-06-01    1\n",
+            "2026-06-02    1\n",
+            "2026-06-03    1\n",
+            "2026-06-04    1\n",
+            "2026-06-06    1\n",
+            "2026-06-07    1\n",
+            "dtype: int64\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# --- SAVE & DOWNLOAD the cleaned file ---\n",
+        "df.to_csv(\"clean_volunteers.csv\", index=False)\n",
+        "print(\"Saved clean_volunteers.csv\")\n",
+        "\n",
+        "from google.colab import files\n",
+        "files.download(\"clean_volunteers.csv\")   # downloads to your computer"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 34
+        },
+        "id": "1YU35S5KGUoe",
+        "outputId": "121f87ae-b57d-47c4-f759-e6708e72521f"
+      },
+      "execution_count": 5,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Saved clean_volunteers.csv\n"
+          ]
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ],
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ],
+            "application/javascript": [
+              "download(\"download_e62978ef-fae9-45fb-9524-9b3b88b1d95b\", \"clean_volunteers.csv\", 243)"
+            ]
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "thP7h6LdGUUx"
+      },
+      "execution_count": 5,
+      "outputs": []
+    }
+  ]
+}
